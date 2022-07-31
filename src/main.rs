@@ -1,10 +1,9 @@
 #![warn(clippy::all, clippy::pedantic)]
 
 use bracket_lib::prelude::*;
-use more_asserts::*;
 
 const FRAME_DURATION: f32 = 75.0;
-const SCREEN_WIDTH: i32 = 80;
+// const SCREEN_WIDTH: i32 = 80;
 const SCREEN_HEIGHT: i32 = 50;
 
 const MAX_VELOCITY: f32 = 3.0;
@@ -81,7 +80,9 @@ impl Player {
     }
 
     fn render(&mut self, ctx: &mut BTerm) {
-        ctx.set(self.x, self.y, YELLOW, BLACK, to_cp437('#'))
+        ctx.set(self.x, self.y, RED, BLACK, to_cp437('#'));
+        ctx.set(self.x, self.y + 1, YELLOW, BLACK, to_cp437('#'));
+        ctx.set(self.x, self.y + 2, YELLOW, BLACK, to_cp437('#'));
     }
 }
 
@@ -172,8 +173,9 @@ fn main() -> BError {
 
 #[cfg(test)]
 mod tests {
-    use more_asserts::assert_gt;
+    use more_asserts::{assert_gt, assert_le};
 
+    use super::MAX_VELOCITY;
     use crate::Player;
 
     #[test]
@@ -205,5 +207,21 @@ mod tests {
         player.tick();
 
         assert_gt!(player.y, 0);
+    }
+
+    #[test]
+    fn player_doesnt_exceed_max_velocity() {
+        let mut player = Player::new(0, 0);
+
+        player.point(1.0, 0.0);
+        player.accelerate(1.0);
+        player.accelerate(1.0);
+        player.accelerate(1.0);
+        player.accelerate(1.0);
+        player.accelerate(1.0);
+        player.tick();
+
+        assert_le!(player.velocity, MAX_VELOCITY);
+        assert_gt!(player.velocity, 0.0);
     }
 }
