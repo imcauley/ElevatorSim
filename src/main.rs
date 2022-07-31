@@ -1,14 +1,15 @@
 #![warn(clippy::all, clippy::pedantic)]
 
 use bracket_lib::prelude::*;
+use more_asserts::*;
 
 const FRAME_DURATION: f32 = 75.0;
 const SCREEN_WIDTH: i32 = 80;
 const SCREEN_HEIGHT: i32 = 50;
 
-const MAX_VELOCITY: f32 = 5.0;
-const ACCELERATION: f32 = 1.0;
-const RESISTENCE: f32 = 0.7;
+const MAX_VELOCITY: f32 = 3.0;
+const MAX_ACCELERATION: f32 = 1.0;
+const RESISTENCE: f32 = 0.3;
 
 enum GameMode {
     Menu,
@@ -18,8 +19,9 @@ enum GameMode {
 struct Player {
     x: i32,
     y: i32,
-    velocity_x: f32,
-    velocity_y: f32,
+    direction_x: f32,
+    direction_y: f32,
+    velocity: f32,
 }
 
 struct State {
@@ -33,29 +35,49 @@ impl Player {
         Player {
             x,
             y,
-            velocity_x: 0.0,
-            velocity_y: 0.0,
+            direction_x: 0.0,
+            direction_y: 0.0,
+            velocity: 0.0,
         }
     }
 
-    fn accelerate(&mut self, x: f32, y: f32) {
-        if x != 0.0 {
-            self.velocity_x += x;
+    fn accelerate(&mut self, amount: f32) {
+        if amount > MAX_ACCELERATION {
+            self.velocity += MAX_ACCELERATION;
+        } else {
+            self.velocity += amount;
         }
 
-        if y != 0.0 {
-            self.velocity_y += y;
+        if self.velocity > MAX_VELOCITY {
+            self.velocity = MAX_VELOCITY;
         }
+    }
+
+    fn point(&mut self, x: f32, y: f32) {
+        self.direction_x += x;
+        self.direction_y += y;
+
+        let magnitude = (self.direction_x.powf(2.0) + self.direction_x.powf(2.0))
+            .sqrt()
+            .abs();
+
+        if magnitude == 0.0 {
+            return;
+        }
+
+        self.direction_x /= magnitude;
+        self.direction_y /= magnitude;
     }
 
     fn tick(&mut self) {
-        self.x += self.velocity_x as i32;
-        self.y += self.velocity_y as i32;
-        // self.y += self.velocity as i32;
-        // self.x += 1;
-        // if self.y < 0 {
-        //     self.y = 0;
-        // }
+        self.x += (self.velocity * self.direction_x).round() as i32;
+        self.y += (self.velocity * self.direction_y).round() as i32;
+
+        if self.velocity > 0.0 {
+            self.velocity -= RESISTENCE;
+        } else {
+            self.velocity = 0.0;
+        }
     }
 
     fn render(&mut self, ctx: &mut BTerm) {
@@ -116,7 +138,10 @@ impl State {
 
         if self.frame_time > FRAME_DURATION {
             self.frame_time = 0.0;
-            self.player.accelerate(x_dir, y_dir);
+            if x_dir != 0.0 || y_dir != 0.0 {
+                self.player.accelerate(1.0);
+            }
+            self.player.point(x_dir, y_dir);
             self.player.tick();
         }
 
@@ -143,4 +168,42 @@ fn main() -> BError {
         .build()?;
 
     main_loop(context, State::new())
+}
+
+#[cfg(test)]
+mod tests {
+    use more_asserts::assert_gt;
+
+    use crate::Player;
+
+    #[test]
+    fn player_doesnt_move() {
+        let mut player = Player::new(0, 0);
+        player.tick();
+
+        assert_eq!(player.x, 0);
+        assert_eq!(player.y, 0);
+    }
+
+    #[test]
+    fn player_move_right() {
+        let mut player = Player::new(0, 0);
+
+        player.point(1.0, 0.0);
+        player.accelerate(1.0);
+        player.tick();
+
+        assert_gt!(player.x, 0);
+    }
+
+    #[test]
+    fn player_move_up() {
+        let mut player = Player::new(0, 0);
+
+        player.point(0.0, 1.0);
+        player.accelerate(1.0);
+        player.tick();
+
+        assert_gt!(player.y, 0);
+    }
 }
