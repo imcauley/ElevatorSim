@@ -33,6 +33,7 @@ struct Person {
 }
 
 struct Floor {
+    number: i32,
     elevator: Option<Elevator>,
     people: Vec<Person>,
 }
@@ -45,10 +46,36 @@ struct Elevator {
     people: Vec<Person>,
 }
 
+struct Building {
+    floors: Vec<Floor>,
+    elevators: Vec<Elevator>,
+    people: Vec<Person>,
+}
+
 struct State {
     mode: GameMode,
     frame_time: f32,
     elevator: Elevator,
+}
+
+impl Building {
+    fn tick(&mut self) {
+        for floor in self.floors.iter() {
+            // empty people from elevator to floor
+            // add people from floor to elevatorå
+            // add people from rooms to floor
+        }
+    }
+
+    fn elevator_at_floor(&mut self, number: i32) -> Option<&mut Elevator> {
+        for elevator in self.elevators.iter_mut() {
+            if elevator.current_floor == number {
+                return Some(elevator);
+            }
+        }
+
+        return None;
+    }
 }
 
 impl Elevator {
