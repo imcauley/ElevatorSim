@@ -59,6 +59,24 @@ struct State {
 }
 
 impl Building {
+    fn new(floors: i32, elevators: i32) -> Self {
+        let mut building = Building {
+            floors: Vec::new(),
+            elevators: Vec::new(),
+            people: Vec::new(),
+        };
+
+        for index in 0..floors {
+            building.floors.push(Floor::new(index + 1));
+        }
+
+        for _ in 0..elevators {
+            building.elevators.push(Elevator::new());
+        }
+
+        building
+    }
+
     fn tick(&mut self) {
         for floor in self.floors.iter() {
             // empty people from elevator to floor
@@ -155,7 +173,15 @@ impl Elevator {
     }
 }
 
-impl Floor {}
+impl Floor {
+    fn new(number: i32) -> Self {
+        Floor {
+            number: number,
+            elevator: None,
+            people: Vec::new(),
+        }
+    }
+}
 
 impl State {
     fn new() -> Self {
