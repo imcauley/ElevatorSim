@@ -4,10 +4,6 @@ use std::{error::Error, fmt};
 
 use bracket_lib::prelude::*;
 
-const FRAME_DURATION: f32 = 75.0;
-// const SCREEN_WIDTH: i32 = 80;
-const SCREEN_HEIGHT: i32 = 50;
-
 struct ElevatorFull;
 
 impl Error for ElevatorFull {}
@@ -42,7 +38,9 @@ struct Floor {
 }
 
 struct Elevator {
-    floor: i32,
+    current_floor: i32,
+    destination_floor: i32,
+    destionaton_queue: Vec<i32>,
     capacity: i32,
     people: Vec<Person>,
 }
@@ -56,10 +54,29 @@ struct State {
 impl Elevator {
     fn new() -> Self {
         Elevator {
-            floor: 1,
-            capacity: 0,
+            current_floor: 1,
+            destination_floor: 1,
+            destionaton_queue: Vec::new(),
+            capacity: 12,
             people: Vec::new(),
         }
+    }
+
+    fn tick(&mut self) {
+        if self.current_floor < self.destination_floor {
+            self.current_floor += 1;
+        } else if self.current_floor > self.destination_floor {
+            self.current_floor -= 1;
+        } else {
+            match self.destionaton_queue.pop() {
+                Some(floor) => self.destination_floor = floor,
+                None => {}
+            }
+        }
+    }
+
+    fn add_destination_floor(&mut self, floor: i32) {
+        self.destionaton_queue.push(floor);
     }
 
     fn transfer_people_to_elevator(&mut self, people: Vec<Person>) -> Vec<Person> {
@@ -76,7 +93,7 @@ impl Elevator {
     }
 
     fn add_person_to_elevator(&mut self, person: Person) -> Result<(), ElevatorFull> {
-        if self.elevator_is_full() {
+        if self.is_full() {
             return Err(ElevatorFull {});
         }
 
@@ -85,7 +102,7 @@ impl Elevator {
         Ok(())
     }
 
-    fn elevator_is_full(&mut self) -> bool {
+    fn is_full(&mut self) -> bool {
         self.people.len() as i32 >= self.capacity
     }
 
@@ -103,7 +120,7 @@ impl Elevator {
         ctx.set(10, 9, RED, BLACK, to_cp437('#'));
         ctx.set(10, 12, RED, BLACK, to_cp437('#'));
 
-        let floor_string = (self.floor as u32).to_string();
+        let floor_string = (self.current_floor as u32).to_string();
 
         for (i, c) in floor_string.chars().enumerate() {
             ctx.set(9 + i, 8, RED, BLACK, to_cp437(c));
