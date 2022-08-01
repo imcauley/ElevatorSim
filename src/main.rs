@@ -29,6 +29,7 @@ enum GameMode {
     Playing,
 }
 
+#[derive(Clone)]
 struct Person {
     origin: i32,
     destination: i32,
@@ -59,6 +60,19 @@ impl Elevator {
             capacity: 0,
             people: Vec::new(),
         }
+    }
+
+    fn transfer_people_to_elevator(&mut self, people: Vec<Person>) -> Vec<Person> {
+        while !people.is_empty() {
+            for (index, person) in people.iter().enumerate() {
+                match self.add_person_to_elevator(person.clone()) {
+                    Ok(()) => {}
+                    Err(_) => return people[index..].to_vec(),
+                };
+            }
+        }
+
+        Vec::from([])
     }
 
     fn add_person_to_elevator(&mut self, person: Person) -> Result<(), ElevatorFull> {
@@ -97,11 +111,7 @@ impl Elevator {
     }
 }
 
-impl Floor {
-    fn transfer_people_to_elevator(&mut self, elevator: Elevator) {
-        while !self.people.is_empty() {}
-    }
-}
+impl Floor {}
 
 impl State {
     fn new() -> Self {
