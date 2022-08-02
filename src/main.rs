@@ -100,22 +100,20 @@ impl Building {
         }
     }
 
-    fn generate_people_going_out(&mut self) -> Vec<Person> {
-        let mut people: Vec<Person> = Vec::new();
+    fn generate_people_going_out(&mut self) {
         for _ in 0..19 {
-            people.push(Person::new(self.random_floor(), 1))
+            let floor = self.random_floor();
+            let person = Person::new(floor, 1);
+            self.floors[floor as usize].people.push(person);
         }
-
-        people
     }
 
-    fn generate_people_coming_in(&mut self) -> Vec<Person> {
-        let mut people: Vec<Person> = Vec::new();
+    fn generate_people_coming_in(&mut self) {
         for _ in 0..19 {
-            people.push(Person::new(1, self.random_floor()))
+            let floor = self.random_floor();
+            let person = Person::new(1, floor);
+            self.floors[floor as usize].people.push(person);
         }
-
-        people
     }
 
     fn random_floor(&mut self) -> i32 {
