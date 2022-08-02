@@ -1126,6 +1126,7 @@ version = "0.1.0"
 dependencies = [
  "bracket-lib",
  "more-asserts",
+ "rand",
 ]
 
 [[package]]

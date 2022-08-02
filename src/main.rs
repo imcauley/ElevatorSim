@@ -1,5 +1,6 @@
 #![warn(clippy::all, clippy::pedantic)]
 
+use rand::Rng;
 use std::{error::Error, fmt};
 
 use bracket_lib::prelude::*;
@@ -58,6 +59,20 @@ struct State {
     elevator: Elevator,
 }
 
+impl Person {
+    fn new(origin: i32, destination: i32) -> Self {
+        Person {
+            origin: origin,
+            destination: destination,
+            wait_time: 0,
+        }
+    }
+
+    fn tick(&mut self) {
+        self.wait_time += 1
+    }
+}
+
 impl Building {
     fn new(floors: i32, elevators: i32) -> Self {
         let mut building = Building {
@@ -83,6 +98,31 @@ impl Building {
             // add people from floor to elevatorå
             // add people from rooms to floor
         }
+    }
+
+    fn generate_people_going_out(&mut self) -> Vec<Person> {
+        let mut people: Vec<Person> = Vec::new();
+        for _ in 0..19 {
+            people.push(Person::new(self.random_floor(), 1))
+        }
+
+        people
+    }
+
+    fn generate_people_coming_in(&mut self) -> Vec<Person> {
+        let mut people: Vec<Person> = Vec::new();
+        for _ in 0..19 {
+            people.push(Person::new(1, self.random_floor()))
+        }
+
+        people
+    }
+
+    fn random_floor(&mut self) -> i32 {
+        let max_floor = self.floors.len() as i32;
+        let mut rng = rand::thread_rng();
+
+        rng.gen_range(1..max_floor)
     }
 
     fn elevator_at_floor(&mut self, number: i32) -> Option<&mut Elevator> {
