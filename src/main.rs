@@ -26,19 +26,21 @@ enum GameMode {
     Playing,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 struct Person {
     origin: i32,
     destination: i32,
     wait_time: i32,
 }
 
+#[derive(Clone)]
 struct Floor {
     number: i32,
     elevator: Option<Elevator>,
     people: Vec<Person>,
 }
 
+#[derive(Clone)]
 struct Elevator {
     current_floor: i32,
     destination_floor: i32,
@@ -50,13 +52,12 @@ struct Elevator {
 struct Building {
     floors: Vec<Floor>,
     elevators: Vec<Elevator>,
-    people: Vec<Person>,
 }
 
 struct State {
     mode: GameMode,
     frame_time: f32,
-    elevator: Elevator,
+    building: Building,
 }
 
 impl Person {
@@ -78,7 +79,6 @@ impl Building {
         let mut building = Building {
             floors: Vec::new(),
             elevators: Vec::new(),
-            people: Vec::new(),
         };
 
         for index in 0..floors {
@@ -93,15 +93,29 @@ impl Building {
     }
 
     fn tick(&mut self) {
-        for floor in self.floors.iter() {
-            // empty people from elevator to floor
-            // add people from floor to elevatorå
-            // add people from rooms to floor
+        // empty people from elevator to floor
+        // add people from floor to elevator
+        // generate people going in and out
+        self.generate_people_coming_in();
+        self.generate_people_going_out();
+        // move elevators
+        // direct where elevators will go
+    }
+
+    fn transfer_people(&mut self) {
+        for floor_number in 1..self.floors.len() {
+            match self.elevator_at_floor(floor_number as i32) {
+                None => {}
+                Some(elevator) => {
+                    let people = elevator.people.to_owned();
+                    self.floors[floor_number].transfer_people_to_floor(people);
+                }
+            }
         }
     }
 
     fn generate_people_going_out(&mut self) {
-        for _ in 0..19 {
+        for _ in 0..20 {
             let floor = self.random_floor();
             let person = Person::new(floor, 1);
             self.floors[floor as usize].people.push(person);
@@ -219,13 +233,19 @@ impl Floor {
             people: Vec::new(),
         }
     }
+
+    fn transfer_people_to_floor(&mut self, people: Vec<Person>) {
+        for person in people {
+            self.people.push(person);
+        }
+    }
 }
 
 impl State {
     fn new() -> Self {
         State {
             mode: GameMode::Menu,
-            elevator: Elevator::new(),
+            building: Building::new(10, 1),
             frame_time: 0.0,
         }
     }
@@ -247,13 +267,12 @@ impl State {
 
     fn start_game(&mut self) {
         self.mode = GameMode::Playing;
-        self.elevator = Elevator::new();
         self.frame_time = 0.0;
-        self.mode = GameMode::Playing;
     }
 
     fn play(&mut self, ctx: &mut BTerm) {
-        self.elevator.render(ctx);
+        self.building.tick();
+        // self.elevator.render(ctx);
     }
 }
 
