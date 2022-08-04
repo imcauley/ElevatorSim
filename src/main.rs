@@ -33,7 +33,7 @@ type ElevatorIndex = i32;
 struct Person {
     origin: FloorIndex,
     destination: FloorIndex,
-    elevator: ElevatorIndex,
+    elevator: Option<ElevatorIndex>,
     wait_time: i32,
 }
 
@@ -57,8 +57,6 @@ struct State {
 }
 
 impl Person {
-    fn tick(&mut self) {}
-
     fn can_enter_elevator(self, elevator: Elevator) -> bool {
         if self.origin != elevator.current_floor {
             return false;
@@ -88,9 +86,10 @@ impl Elevator {
     }
 }
 
-fn add_people_to_elevator<'a>(people: &mut Vec<Person>, elevator: &mut Elevator) {
+fn add_people_to_elevator(people: &mut Vec<Person>, elevator: &mut Elevator) {
     for person in people {
         if person.can_enter_elevator(elevator.clone()) {
+            person.elevator = Some(elevator.number);
             elevator.capacity += 1;
         } else {
             break;
@@ -127,6 +126,8 @@ impl State {
     }
 
     fn play(&mut self, ctx: &mut BTerm) {
+        // generate new people
+        //
         // self.elevator.render(ctx);
     }
 }
