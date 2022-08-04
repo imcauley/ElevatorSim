@@ -28,30 +28,23 @@ enum GameMode {
 
 #[derive(Clone, Copy)]
 struct Person {
-    origin: i32,
-    destination: i32,
+    origin: &Floor,
+    destination: &Floor,
+    elevator: Option<&Elevator>,
     wait_time: i32,
 }
 
 #[derive(Clone)]
 struct Floor {
     number: i32,
-    elevator: Option<Elevator>,
-    people: Vec<Person>,
+    elevators: Vec<&Elevator>,
 }
 
 #[derive(Clone)]
 struct Elevator {
     current_floor: i32,
     destination_floor: i32,
-    destionaton_queue: Vec<i32>,
     capacity: i32,
-    people: Vec<Person>,
-}
-
-struct Building {
-    floors: Vec<Floor>,
-    elevators: Vec<Elevator>,
 }
 
 struct State {
@@ -61,196 +54,10 @@ struct State {
 }
 
 impl Person {
-    fn new(origin: i32, destination: i32) -> Self {
-        Person {
-            origin: origin,
-            destination: destination,
-            wait_time: 0,
-        }
-    }
-
     fn tick(&mut self) {
-        self.wait_time += 1
-    }
-}
-
-impl Building {
-    fn new(floors: i32, elevators: i32) -> Self {
-        let mut building = Building {
-            floors: Vec::new(),
-            elevators: Vec::new(),
-        };
-
-        for index in 0..floors {
-            building.floors.push(Floor::new(index + 1));
+        match self.elevator {
+            None => {}
         }
-
-        for _ in 0..elevators {
-            building.elevators.push(Elevator::new());
-        }
-
-        building
-    }
-
-    fn tick(&mut self) {
-        // empty people from elevator to floor
-        // add people from floor to elevator
-        // generate people going in and out
-        self.generate_people_coming_in();
-        self.generate_people_going_out();
-        // move elevators
-        // direct where elevators will go
-    }
-
-    fn transfer_people(&mut self) {
-        for floor_number in 1..self.floors.len() {
-            // get people coming out of elevator
-            // move people coming out to floor
-            // get people going on to elevator
-            // move poeple going in to elevator
-        }
-    }
-
-    fn generate_people_going_out(&mut self) {
-        for _ in 0..20 {
-            let floor = self.random_floor();
-            let person = Person::new(floor, 1);
-            self.floors[floor as usize].people.push(person);
-        }
-    }
-
-    fn generate_people_coming_in(&mut self) {
-        for _ in 0..19 {
-            let floor = self.random_floor();
-            let person = Person::new(1, floor);
-            self.floors[floor as usize].people.push(person);
-        }
-    }
-
-    fn random_floor(&mut self) -> i32 {
-        let max_floor = self.floors.len() as i32;
-        let mut rng = rand::thread_rng();
-
-        rng.gen_range(1..max_floor)
-    }
-
-    fn get_elevator_at_floor(&mut self, number: usize) -> Option<&mut Elevator> {
-        for elevator in self.elevators.iter_mut() {
-            if elevator.current_floor == number {
-                return Some(elevator);
-            }
-        }
-
-        return None;
-    }
-
-    fn get_floor(&mut self, number: usize) -> &mut Floor {
-        match self.floors.get_mut(number) {
-            None => panic!("cannot find floor"),
-            Some(f) => return f,
-        };
-    }
-}
-
-impl Elevator {
-    fn new() -> Self {
-        Elevator {
-            current_floor: 1,
-            destination_floor: 1,
-            destionaton_queue: Vec::new(),
-            capacity: 12,
-            people: Vec::new(),
-        }
-    }
-
-    fn tick(&mut self) {
-        if self.current_floor < self.destination_floor {
-            self.current_floor += 1;
-        } else if self.current_floor > self.destination_floor {
-            self.current_floor -= 1;
-        } else {
-            match self.destionaton_queue.pop() {
-                Some(floor) => self.destination_floor = floor,
-                None => {}
-            }
-        }
-    }
-
-    fn add_destination_floor(&mut self, floor: i32) {
-        self.destionaton_queue.push(floor);
-    }
-
-    fn transfer_people_to_elevator(self, people: Vec<Person>) -> (Vec<Person>, Vec<Person>) {
-        let people_in = Vec::new();
-        let people_out = Vec::new();
-
-        for person in people {
-        }
-
-        (people_in, people_out)
-    }
-
-    fn add_person_to_elevator(&mut self, person: Person) -> Result<(), ElevatorFull> {
-        if self.is_full() {
-            return Err(ElevatorFull {});
-        }
-
-        self.people.push(person);
-
-        Ok(())
-    }
-
-    fn is_full(&mut self) -> bool {
-        self.people.len() as i32 >= self.capacity
-    }
-
-    fn render(&mut self, ctx: &mut BTerm) {
-        ctx.set(9, 9, RED, BLACK, to_cp437('#'));
-        ctx.set(9, 10, RED, BLACK, to_cp437('#'));
-        ctx.set(9, 11, RED, BLACK, to_cp437('#'));
-        ctx.set(9, 12, RED, BLACK, to_cp437('#'));
-
-        ctx.set(11, 9, RED, BLACK, to_cp437('#'));
-        ctx.set(11, 10, RED, BLACK, to_cp437('#'));
-        ctx.set(11, 11, RED, BLACK, to_cp437('#'));
-        ctx.set(11, 12, RED, BLACK, to_cp437('#'));
-
-        ctx.set(10, 9, RED, BLACK, to_cp437('#'));
-        ctx.set(10, 12, RED, BLACK, to_cp437('#'));
-
-        let floor_string = (self.current_floor as u32).to_string();
-
-        for (i, c) in floor_string.chars().enumerate() {
-            ctx.set(9 + i, 8, RED, BLACK, to_cp437(c));
-        }
-    }
-}
-
-impl Floor {
-    fn new(number: i32) -> Self {
-        Floor {
-            number: number,
-            elevator: None,
-            people: Vec::new(),
-        }
-    }
-
-    fn people_transferring(self) -> (Vec<Person>, Vec<Person>) {
-        let mut people_going 
-    }
-
-    fn transfer_people_to_floor(&mut self, people: Vec<Person>) -> Vec<Person> {
-        let mut remaining_people: Vec<Person> = Vec::new();
-
-        for person in people {
-            if (person.destination == self.number) {
-                self.people.push(person);
-            } else {
-                remaining_people.push(person);
-            }
-        }
-
-        remaining_people
     }
 }
 
