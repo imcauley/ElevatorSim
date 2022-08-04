@@ -1,6 +1,11 @@
 #![warn(clippy::all, clippy::pedantic)]
 
-use std::mem::take;
+#[derive(PartialEq, Eq)]
+enum Direction {
+    Up,
+    Down,
+    Still,
+}
 
 type People = Vec<Person>;
 
@@ -13,12 +18,23 @@ struct Person {
 struct Elevator {
     people: People,
     floor: i32,
+    destination: i32,
     max_capacity: i32,
 }
 
 struct Floor {
     number: i32,
     people: People,
+}
+
+impl Person {
+    fn going_in_direction(&self) -> Direction {
+        if self.origin < self.destination {
+            return Direction::Up;
+        } else {
+            return Direction::Down;
+        }
+    }
 }
 
 impl Floor {
@@ -36,19 +52,34 @@ impl Elevator {
             people: People::new(),
             floor: 1,
             max_capacity: 10,
+            destination: 1,
+        }
+    }
+
+    fn going_in_direction(&self) -> Direction {
+        if self.floor < self.destination {
+            return Direction::Up;
+        } else if self.floor < self.destination {
+            return Direction::Down;
+        } else {
+            return Direction::Still;
         }
     }
 
     fn has_capacity(&self) -> bool {
-        true
+        (self.people.len() as i32) < self.max_capacity
     }
+}
+
+fn same_direction(elevator: &Elevator, person: &Person) -> bool {
+    elevator.going_in_direction() == person.going_in_direction()
 }
 
 fn transfer_floor_to_elevator(floor: &mut Floor, elevator: &mut Elevator) {
     let mut remaining_people: People = Vec::new();
 
     for person in &mut floor.people {
-        if elevator.has_capacity() {
+        if elevator.has_capacity() && same_direction(elevator, person) {
             elevator.people.push(person.clone());
         } else {
             remaining_people.push(person.clone());
