@@ -1,150 +1,79 @@
 #![warn(clippy::all, clippy::pedantic)]
 
-use rand::Rng;
-use std::{error::Error, fmt};
+use std::mem::take;
 
-use bracket_lib::prelude::*;
+type People = Vec<Person>;
 
-struct ElevatorFull;
-
-impl Error for ElevatorFull {}
-
-impl fmt::Display for ElevatorFull {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Oh no, something bad went down")
-    }
-}
-
-impl fmt::Debug for ElevatorFull {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{{ file: {}, line: {} }}", file!(), line!()) // programmer-facing output
-    }
-}
-
-enum GameMode {
-    Menu,
-    Playing,
-}
-
-type FloorIndex = i32;
-type ElevatorIndex = i32;
-
-#[derive(Clone, Copy)]
+#[derive(Clone, Debug)]
 struct Person {
-    origin: FloorIndex,
-    destination: FloorIndex,
-    elevator: Option<ElevatorIndex>,
-    wait_time: i32,
+    origin: i32,
+    destination: i32,
 }
 
-#[derive(Clone)]
-struct Floor {
-    number: FloorIndex,
-}
-
-#[derive(Clone)]
 struct Elevator {
-    number: ElevatorIndex,
-    current_floor: FloorIndex,
-    destination_floor: FloorIndex,
-    capacity: i32,
+    people: People,
+    floor: i32,
     max_capacity: i32,
 }
 
-struct State {
-    mode: GameMode,
-    frame_time: f32,
+struct Floor {
+    number: i32,
+    people: People,
 }
 
-impl Person {
-    fn can_enter_elevator(self, elevator: Elevator) -> bool {
-        if self.origin != elevator.current_floor {
-            return false;
+impl Floor {
+    fn new(number: i32) -> Self {
+        Floor {
+            number: number,
+            people: People::new(),
         }
+    }
+}
 
-        if !elevator.has_capacity() {
-            return false;
+impl Elevator {
+    fn new() -> Self {
+        Elevator {
+            people: People::new(),
+            floor: 1,
+            max_capacity: 10,
         }
+    }
 
+    fn has_capacity(&self) -> bool {
         true
     }
 }
 
-impl Floor {
-    // fn available_elevator(self) -> Option<Elevator> {
-    //     for elevator in self.elevators {
-    //         if elevator.has_capacity() {
-    //             Some(elevator)
-    //         }
-    //     }
-    // }
-}
+fn transfer_floor_to_elevator(floor: &mut Floor, elevator: &mut Elevator) {
+    let mut remaining_people: People = Vec::new();
 
-impl Elevator {
-    fn has_capacity(self) -> bool {
-        self.max_capacity < self.capacity
-    }
-}
-
-fn add_people_to_elevator(people: &mut Vec<Person>, elevator: &mut Elevator) {
-    for person in people {
-        if person.can_enter_elevator(elevator.clone()) {
-            person.elevator = Some(elevator.number);
-            elevator.capacity += 1;
+    for person in &mut floor.people {
+        if elevator.has_capacity() {
+            elevator.people.push(person.clone());
         } else {
-            break;
+            remaining_people.push(person.clone());
         }
     }
+
+    floor.people = remaining_people;
 }
 
-impl State {
-    fn new() -> Self {
-        State {
-            mode: GameMode::Menu,
-            frame_time: 0.0,
-        }
+fn main() {
+    let mut floors = Vec::new();
+    for index in 0..10 {
+        floors.push(Floor::new(index));
     }
 
-    fn main_menu(&mut self, ctx: &mut BTerm) {
-        ctx.cls();
-        ctx.print_centered(5, "Peace");
-        ctx.print_centered(8, "(P) Play Game");
-        ctx.print_centered(9, "(Q) Quit Game");
+    let mut elevators = Vec::new();
+    for _ in 0..3 {
+        elevators.push(Elevator::new());
+    }
 
-        if let Some(key) = ctx.key {
-            match key {
-                VirtualKeyCode::P => self.start_game(),
-                VirtualKeyCode::Q => ctx.quitting = true,
-                _ => {}
+    for floor in &mut floors {
+        for elevator in &mut elevators {
+            if elevator.floor == floor.number {
+                transfer_floor_to_elevator(floor, elevator);
             }
         }
     }
-
-    fn start_game(&mut self) {
-        self.mode = GameMode::Playing;
-        self.frame_time = 0.0;
-    }
-
-    fn play(&mut self, ctx: &mut BTerm) {
-        // generate new people
-        //
-        // self.elevator.render(ctx);
-    }
-}
-
-impl GameState for State {
-    fn tick(&mut self, ctx: &mut BTerm) {
-        match self.mode {
-            GameMode::Menu => self.main_menu(ctx),
-            GameMode::Playing => self.play(ctx),
-        }
-    }
-}
-
-fn main() -> BError {
-    let context = BTermBuilder::simple80x50()
-        .with_title("Flappy Dragon")
-        .build()?;
-
-    main_loop(context, State::new())
 }
