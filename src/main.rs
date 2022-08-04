@@ -104,13 +104,10 @@ impl Building {
 
     fn transfer_people(&mut self) {
         for floor_number in 1..self.floors.len() {
-            match self.elevator_at_floor(floor_number as i32) {
-                None => {}
-                Some(elevator) => {
-                    let people = elevator.people.to_owned();
-                    self.floors[floor_number].transfer_people_to_floor(people);
-                }
-            }
+            // get people coming out of elevator
+            // move people coming out to floor
+            // get people going on to elevator
+            // move poeple going in to elevator
         }
     }
 
@@ -137,7 +134,7 @@ impl Building {
         rng.gen_range(1..max_floor)
     }
 
-    fn elevator_at_floor(&mut self, number: i32) -> Option<&mut Elevator> {
+    fn get_elevator_at_floor(&mut self, number: usize) -> Option<&mut Elevator> {
         for elevator in self.elevators.iter_mut() {
             if elevator.current_floor == number {
                 return Some(elevator);
@@ -145,6 +142,13 @@ impl Building {
         }
 
         return None;
+    }
+
+    fn get_floor(&mut self, number: usize) -> &mut Floor {
+        match self.floors.get_mut(number) {
+            None => panic!("cannot find floor"),
+            Some(f) => return f,
+        };
     }
 }
 
@@ -176,17 +180,14 @@ impl Elevator {
         self.destionaton_queue.push(floor);
     }
 
-    fn transfer_people_to_elevator(&mut self, people: Vec<Person>) -> Vec<Person> {
-        while !people.is_empty() {
-            for (index, person) in people.iter().enumerate() {
-                match self.add_person_to_elevator(person.clone()) {
-                    Ok(()) => {}
-                    Err(_) => return people[index..].to_vec(),
-                };
-            }
+    fn transfer_people_to_elevator(self, people: Vec<Person>) -> (Vec<Person>, Vec<Person>) {
+        let people_in = Vec::new();
+        let people_out = Vec::new();
+
+        for person in people {
         }
 
-        Vec::from([])
+        (people_in, people_out)
     }
 
     fn add_person_to_elevator(&mut self, person: Person) -> Result<(), ElevatorFull> {
@@ -234,10 +235,22 @@ impl Floor {
         }
     }
 
-    fn transfer_people_to_floor(&mut self, people: Vec<Person>) {
+    fn people_transferring(self) -> (Vec<Person>, Vec<Person>) {
+        let mut people_going 
+    }
+
+    fn transfer_people_to_floor(&mut self, people: Vec<Person>) -> Vec<Person> {
+        let mut remaining_people: Vec<Person> = Vec::new();
+
         for person in people {
-            self.people.push(person);
+            if (person.destination == self.number) {
+                self.people.push(person);
+            } else {
+                remaining_people.push(person);
+            }
         }
+
+        remaining_people
     }
 }
 
