@@ -26,37 +26,74 @@ enum GameMode {
     Playing,
 }
 
+type FloorIndex = i32;
+type ElevatorIndex = i32;
+
 #[derive(Clone, Copy)]
 struct Person {
-    origin: &Floor,
-    destination: &Floor,
-    elevator: Option<&Elevator>,
+    origin: FloorIndex,
+    destination: FloorIndex,
+    elevator: ElevatorIndex,
     wait_time: i32,
 }
 
 #[derive(Clone)]
 struct Floor {
-    number: i32,
-    elevators: Vec<&Elevator>,
+    number: FloorIndex,
 }
 
 #[derive(Clone)]
 struct Elevator {
-    current_floor: i32,
-    destination_floor: i32,
+    number: ElevatorIndex,
+    current_floor: FloorIndex,
+    destination_floor: FloorIndex,
     capacity: i32,
+    max_capacity: i32,
 }
 
 struct State {
     mode: GameMode,
     frame_time: f32,
-    building: Building,
 }
 
 impl Person {
-    fn tick(&mut self) {
-        match self.elevator {
-            None => {}
+    fn tick(&mut self) {}
+
+    fn can_enter_elevator(self, elevator: Elevator) -> bool {
+        if self.origin != elevator.current_floor {
+            return false;
+        }
+
+        if !elevator.has_capacity() {
+            return false;
+        }
+
+        true
+    }
+}
+
+impl Floor {
+    // fn available_elevator(self) -> Option<Elevator> {
+    //     for elevator in self.elevators {
+    //         if elevator.has_capacity() {
+    //             Some(elevator)
+    //         }
+    //     }
+    // }
+}
+
+impl Elevator {
+    fn has_capacity(self) -> bool {
+        self.max_capacity < self.capacity
+    }
+}
+
+fn add_people_to_elevator<'a>(people: &mut Vec<Person>, elevator: &mut Elevator) {
+    for person in people {
+        if person.can_enter_elevator(elevator.clone()) {
+            elevator.capacity += 1;
+        } else {
+            break;
         }
     }
 }
@@ -65,7 +102,6 @@ impl State {
     fn new() -> Self {
         State {
             mode: GameMode::Menu,
-            building: Building::new(10, 1),
             frame_time: 0.0,
         }
     }
@@ -91,7 +127,6 @@ impl State {
     }
 
     fn play(&mut self, ctx: &mut BTerm) {
-        self.building.tick();
         // self.elevator.render(ctx);
     }
 }
