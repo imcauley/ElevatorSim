@@ -89,6 +89,20 @@ fn transfer_floor_to_elevator(floor: &mut Floor, elevator: &mut Elevator) {
     floor.people = remaining_people;
 }
 
+fn transfer_elevator_to_floor(floor: &mut Floor, elevator: &mut Elevator) {
+    let mut remaining_people = People::new();
+
+    for person in &mut elevator.people {
+        if floor.number == person.destination {
+            floor.people.push(person.clone());
+        } else {
+            remaining_people.push(person.clone());
+        }
+    }
+
+    elevator.people = remaining_people;
+}
+
 fn main() {
     let mut floors = Vec::new();
     for index in 0..10 {
@@ -100,6 +114,17 @@ fn main() {
         elevators.push(Elevator::new());
     }
 
+    // change elevator directions
+    // transfer people from elevators to floors
+    for floor in &mut floors {
+        for elevator in &mut elevators {
+            if elevator.floor == floor.number {
+                transfer_elevator_to_floor(floor, elevator);
+            }
+        }
+    }
+
+    // transfer people from floors to elevators
     for floor in &mut floors {
         for elevator in &mut elevators {
             if elevator.floor == floor.number {
