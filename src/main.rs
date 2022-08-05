@@ -56,10 +56,34 @@ impl Elevator {
         }
     }
 
+    fn print(&self) {
+        print!(
+            "Evelator | {} People | Floor {} | Destination {}",
+            self.people.len(),
+            self.floor,
+            self.destination
+        )
+    }
+
+    fn tick(&mut self) {
+        match self.going_in_direction() {
+            Direction::Still => {}
+            Direction::Down => self.floor -= 1,
+            Direction::Up => self.floor += 1,
+        }
+    }
+
+    fn set_destionation(&mut self, destination: i32) {
+        match self.going_in_direction() {
+            Direction::Still => self.destination = destination,
+            _ => {}
+        }
+    }
+
     fn going_in_direction(&self) -> Direction {
         if self.floor < self.destination {
             return Direction::Up;
-        } else if self.floor < self.destination {
+        } else if self.floor > self.destination {
             return Direction::Down;
         } else {
             return Direction::Still;
@@ -73,6 +97,18 @@ impl Elevator {
 
 fn same_direction(elevator: &Elevator, person: &Person) -> bool {
     elevator.going_in_direction() == person.going_in_direction()
+}
+
+fn get_people_waiting(floors: Vec<Floor>) -> Vec<(i32, i32)> {
+    let mut paths = Vec::new();
+
+    for floor in floors {
+        for person in floor.people {
+            paths.push((floor.number, person.destination));
+        }
+    }
+
+    paths
 }
 
 fn transfer_floor_to_elevator(floor: &mut Floor, elevator: &mut Elevator) {
@@ -112,6 +148,11 @@ fn main() {
     let mut elevators = Vec::new();
     for _ in 0..3 {
         elevators.push(Elevator::new());
+    }
+
+    for e in &mut elevators {
+        e.print();
+        println!("");
     }
 
     // change elevator directions
