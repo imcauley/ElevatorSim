@@ -1,5 +1,7 @@
 #![warn(clippy::all, clippy::pedantic)]
 
+use rand::Rng;
+
 #[derive(PartialEq, Eq)]
 enum Direction {
     Up,
@@ -8,6 +10,7 @@ enum Direction {
 }
 
 type People = Vec<Person>;
+type Path = (i32, i32);
 
 #[derive(Clone, Debug)]
 struct Person {
@@ -22,12 +25,44 @@ struct Elevator {
     max_capacity: i32,
 }
 
+#[derive(Clone)]
 struct Floor {
     number: i32,
     people: People,
 }
 
 impl Person {
+    fn new_random_person(coming_in: bool, max_floor: i32) -> Self {
+        let mut rng = rand::thread_rng();
+
+        let origin = rng.gen_range(0..max_floor);
+        let mut destination = 1;
+
+        // majority of people will go to first floor
+        if rng.gen_range(0..100) < 5 {
+            destination = rng.gen_range(0..max_floor);
+        }
+
+        if coming_in {
+            Person {
+                origin: origin,
+                destination: destination,
+            }
+        } else {
+            Person {
+                origin: destination,
+                destination: origin,
+            }
+        }
+    }
+
+    fn print(&self) {
+        println!(
+            "Person | Origin {} | Destination {}",
+            self.origin, self.destination
+        );
+    }
+
     fn going_in_direction(&self) -> Direction {
         if self.origin < self.destination {
             return Direction::Up;
@@ -99,7 +134,35 @@ fn same_direction(elevator: &Elevator, person: &Person) -> bool {
     elevator.going_in_direction() == person.going_in_direction()
 }
 
-fn get_people_waiting(floors: Vec<Floor>) -> Vec<(i32, i32)> {
+fn path_direction(path: Path) -> Direction {
+    if path.0 < path.1 {
+        return Direction::Up;
+    } else {
+        return Direction::Down;
+    }
+}
+
+fn set_elevator_directions(elevators: &mut Vec<Elevator>, paths: Vec<Path>) {
+    for path in paths {
+        for elevator in elevators.iter_mut() {
+            match elevator.going_in_direction() {
+                Direction::Still => elevator.set_destionation(path.1),
+                Direction::Up => {
+                    if path.0 >= elevator.floor && path.1 > elevator.destination {
+                        elevator.destination = path.1
+                    }
+                }
+                Direction::Down => {
+                    if path.0 <= elevator.floor && path.1 < elevator.destination {
+                        elevator.destination = path.1
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn get_people_waiting(floors: Vec<Floor>) -> Vec<Path> {
     let mut paths = Vec::new();
 
     for floor in floors {
@@ -154,8 +217,12 @@ fn main() {
         e.print();
         println!("");
     }
+    let paths;
 
     // change elevator directions
+    paths = get_people_waiting(floors.clone());
+    set_elevator_directions(&mut elevators, paths);
+
     // transfer people from elevators to floors
     for floor in &mut floors {
         for elevator in &mut elevators {
