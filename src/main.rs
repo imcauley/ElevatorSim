@@ -79,6 +79,10 @@ impl Floor {
             people: People::new(),
         }
     }
+
+    fn print(&self) {
+        println!("Floor {} | People {}", self.number, self.people.len());
+    }
 }
 
 impl Elevator {
@@ -203,6 +207,7 @@ fn transfer_elevator_to_floor(floor: &mut Floor, elevator: &mut Elevator) {
 }
 
 fn main() {
+    // setup
     let mut floors = Vec::new();
     for index in 0..10 {
         floors.push(Floor::new(index));
@@ -213,15 +218,28 @@ fn main() {
         elevators.push(Elevator::new());
     }
 
-    for e in &mut elevators {
-        e.print();
-        println!("");
-    }
     let paths;
+
+    // generate people
+    for _ in 0..10 {
+        let current_person = Person::new_random_person(true, 10);
+        floors[current_person.origin as usize]
+            .people
+            .push(current_person);
+    }
+
+    for f in &mut floors {
+        f.print();
+    }
 
     // change elevator directions
     paths = get_people_waiting(floors.clone());
     set_elevator_directions(&mut elevators, paths);
+
+    for e in &mut elevators {
+        e.print();
+        println!("");
+    }
 
     // transfer people from elevators to floors
     for floor in &mut floors {
