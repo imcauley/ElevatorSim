@@ -7,6 +7,7 @@ use crossterm::{
 };
 use rand::Rng;
 use std::io::{stdout, Write};
+use std::{thread, time};
 
 #[derive(PartialEq, Eq)]
 enum Direction {
@@ -201,7 +202,7 @@ fn transfer_floor_to_elevator(floor: &mut Floor, elevator: &mut Elevator) {
     let mut remaining_people: People = Vec::new();
 
     for person in &mut floor.people {
-        if elevator.has_capacity() && same_direction(elevator, person) {
+        if elevator.has_capacity() {
             elevator.add_person_to_elevator(person.clone());
         } else {
             remaining_people.push(person.clone());
@@ -227,7 +228,7 @@ fn transfer_elevator_to_floor(floor: &mut Floor, elevator: &mut Elevator) {
 
 fn similation_tick(elevators: &mut Vec<Elevator>, floors: &mut Vec<Floor>) {
     // generate new people
-    for _ in 0..10 {
+    for _ in 0..2 {
         let current_person = Person::new_random_person(true, 10);
         floors[current_person.origin as usize]
             .people
@@ -235,6 +236,7 @@ fn similation_tick(elevators: &mut Vec<Elevator>, floors: &mut Vec<Floor>) {
     }
 
     // change elevator directions
+    // TODO: this only needs origin floors
     let paths = get_people_waiting(floors.clone());
     call_elevators(elevators, paths);
     for elevator in elevators.iter_mut() {
@@ -293,6 +295,9 @@ fn main() {
         elevators.push(Elevator::new());
     }
 
-    similation_tick(&mut elevators, &mut floors);
-    print_simulation(&mut elevators, &mut floors).unwrap();
+    for _ in 0..50 {
+        similation_tick(&mut elevators, &mut floors);
+        print_simulation(&mut elevators, &mut floors).unwrap();
+        thread::sleep(time::Duration::from_secs(1));
+    }
 }
