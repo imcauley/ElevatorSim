@@ -1,6 +1,12 @@
 #![warn(clippy::all, clippy::pedantic)]
 
+use crossterm::{
+    cursor,
+    style::{self, Stylize},
+    terminal, ExecutableCommand, QueueableCommand, Result,
+};
 use rand::Rng;
+use std::io::{stdout, Write};
 
 #[derive(PartialEq, Eq)]
 enum Direction {
@@ -81,7 +87,7 @@ impl Floor {
     }
 
     fn print(&self) {
-        println!("Floor {} | People {}", self.number, self.people.len());
+        print!("Floor {} | People {}", self.number, self.people.len());
     }
 }
 
@@ -150,15 +156,17 @@ fn set_elevator_directions(elevators: &mut Vec<Elevator>, paths: Vec<Path>) {
     for path in paths {
         for elevator in elevators.iter_mut() {
             match elevator.going_in_direction() {
-                Direction::Still => elevator.set_destionation(path.0),
+                Direction::Still => {
+                    elevator.set_destionation(path.0);
+                }
                 Direction::Up => {
                     if path.0 >= elevator.floor && path.1 > elevator.destination {
-                        elevator.destination = path.1
+                        elevator.destination = path.0
                     }
                 }
                 Direction::Down => {
                     if path.0 <= elevator.floor && path.1 < elevator.destination {
-                        elevator.destination = path.1
+                        elevator.destination = path.0
                     }
                 }
             }
@@ -241,6 +249,27 @@ fn similation_tick(elevators: &mut Vec<Elevator>, floors: &mut Vec<Floor>) {
     }
 }
 
+fn print_simulation(elevators: &mut Vec<Elevator>, floors: &mut Vec<Floor>) -> Result<()> {
+    let mut stdout = stdout();
+
+    stdout.execute(terminal::Clear(terminal::ClearType::All))?;
+
+    // output floors
+    for (index, floor) in floors.iter().enumerate() {
+        stdout.queue(cursor::MoveTo(3, (index + 3) as u16))?;
+        floor.print();
+    }
+
+    // output elevators
+    for (index, elevator) in elevators.iter().enumerate() {
+        stdout.queue(cursor::MoveTo(25, (index + 3) as u16))?;
+        elevator.print();
+    }
+
+    stdout.flush()?;
+    Ok(())
+}
+
 fn main() {
     // setup
     let mut floors = Vec::new();
@@ -253,16 +282,6 @@ fn main() {
         elevators.push(Elevator::new());
     }
 
-    for _ in 0..50 {
-        similation_tick(&mut elevators, &mut floors);
-
-        for f in &mut floors {
-            f.print();
-        }
-
-        for e in &mut elevators {
-            e.print();
-            println!("");
-        }
-    }
+    similation_tick(&mut elevators, &mut floors);
+    print_simulation(&mut elevators, &mut floors).unwrap();
 }
