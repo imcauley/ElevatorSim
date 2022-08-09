@@ -125,6 +125,14 @@ impl Elevator {
         }
     }
 
+    fn add_person_to_elevator(&mut self, person: Person) {
+        if person.destination > self.destination {
+            self.set_destionation(person.destination);
+        }
+
+        self.people.push(person);
+    }
+
     fn going_in_direction(&self) -> Direction {
         if self.floor < self.destination {
             return Direction::Up;
@@ -152,21 +160,24 @@ fn path_direction(path: Path) -> Direction {
     }
 }
 
-fn set_elevator_directions(elevators: &mut Vec<Elevator>, paths: Vec<Path>) {
+fn call_elevators(elevators: &mut Vec<Elevator>, paths: Vec<Path>) {
     for path in paths {
         for elevator in elevators.iter_mut() {
             match elevator.going_in_direction() {
                 Direction::Still => {
                     elevator.set_destionation(path.0);
+                    break;
                 }
                 Direction::Up => {
-                    if path.0 >= elevator.floor && path.1 > elevator.destination {
-                        elevator.destination = path.0
+                    if path.0 >= elevator.floor {
+                        elevator.set_destionation(path.0);
+                        break;
                     }
                 }
                 Direction::Down => {
-                    if path.0 <= elevator.floor && path.1 < elevator.destination {
-                        elevator.destination = path.0
+                    if path.0 <= elevator.floor {
+                        elevator.set_destionation(path.0);
+                        break;
                     }
                 }
             }
@@ -191,7 +202,7 @@ fn transfer_floor_to_elevator(floor: &mut Floor, elevator: &mut Elevator) {
 
     for person in &mut floor.people {
         if elevator.has_capacity() && same_direction(elevator, person) {
-            elevator.people.push(person.clone());
+            elevator.add_person_to_elevator(person.clone());
         } else {
             remaining_people.push(person.clone());
         }
@@ -215,7 +226,7 @@ fn transfer_elevator_to_floor(floor: &mut Floor, elevator: &mut Elevator) {
 }
 
 fn similation_tick(elevators: &mut Vec<Elevator>, floors: &mut Vec<Floor>) {
-    // generate people
+    // generate new people
     for _ in 0..10 {
         let current_person = Person::new_random_person(true, 10);
         floors[current_person.origin as usize]
@@ -225,7 +236,7 @@ fn similation_tick(elevators: &mut Vec<Elevator>, floors: &mut Vec<Floor>) {
 
     // change elevator directions
     let paths = get_people_waiting(floors.clone());
-    set_elevator_directions(elevators, paths);
+    call_elevators(elevators, paths);
     for elevator in elevators.iter_mut() {
         elevator.tick();
     }
